@@ -24,6 +24,11 @@ app.use(express.json());
 app.use('/api/users', usersRouter);
 app.use('/api/movies', moviesRouter);
 
+
+//ai code because ping is not working
+//switched to es modules
+//resolved import issues after switch
+//killed stale processes running on port 8080
 app.get('/ping', (req, res) => {
   res.send('pong');
 });
