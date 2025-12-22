@@ -16,41 +16,22 @@ export const searchMovies = (args) => {
   });
 };
 
-export const getMovies = (args) => {
-  const [, { filters }] = args.queryKey;
-  const { sortBy, year, rating, genre, page = 1 } = filters || {};
-
-  let url = `https://api.themoviedb.org/3/discover/movie?api_key=${import.meta.env.VITE_TMDB_KEY}&language=en-US&include_adult=false&include_video=false&page=${page}`;
-
-  if (sortBy) {
-    url += `&sort_by=${sortBy}`;
-  }
-
-  if (year) {
-    url += `&year=${year}`;
-  }
-
-  if (rating) {
-    url += `&vote_average.gte=${rating}`;
-  }
-
-  if (genre && genre !== "0") {
-    url += `&with_genres=${genre}`;
-  }
-
-  return fetch(url)
-    .then((response) => {
-      if (!response.ok) {
-        return response.json().then((error) => {
-          throw new Error(error.status_message || "Something went wrong");
-        });
-      }
-      return response.json();
-    })
-    .catch((error) => {
-      throw error;
-    });
+export const getMovies = () => {
+  return fetch(
+    `http://localhost:8080/api/movies/discover`
+  ).then((response) => {
+    if (!response.ok) {
+      return response.json().then((error) => {
+        throw new Error(error.status_message || "Something went wrong");
+      });
+    }
+    return response.json();
+  })
+  .catch((error) => {
+      throw error
+  });
 };
+
 
 export const getMovie = (args) => {
   //console.log(args)
