@@ -4,7 +4,7 @@
   "description": "",
   "license": "ISC",
   "author": "Conor",
-  "type": "commonjs",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "start": "babel-node -r dotenv/config index.js",
