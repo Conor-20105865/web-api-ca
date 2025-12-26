@@ -17,9 +17,13 @@ const PlaylistsPage = () => {
       context.setActivePlaylist(null);
     } else if (value >= playlists.length) {
       setValue(0);
-      context.setActivePlaylist(playlists[0][0]);
+      if (playlists[0]) {
+        context.setActivePlaylist(playlists[0][0]);
+      }
+    } else if (playlists[value]) {
+      context.setActivePlaylist(playlists[value][0]);
     }
-  }, [playlists, value]);
+  }, [playlists.length]);
 
   const handleChange = (event, newValue) => {
     setValue(newValue);

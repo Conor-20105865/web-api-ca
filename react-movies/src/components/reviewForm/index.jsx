@@ -4,11 +4,14 @@ import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
+import Rating from "@mui/material/Rating";
 import { useForm, Controller } from "react-hook-form";
-import { MoviesContext } from "../../contexts/moviesContext";
+import { AuthContext } from "../../contexts/authContext";
 import Snackbar from "@mui/material/Snackbar";
 import MuiAlert from "@mui/material/Alert";
 import { useNavigate } from "react-router";
+import { createReview } from "../../api/tmdb-api";
+import { useQueryClient } from "@tanstack/react-query";
 
 
 const ratings = [
@@ -63,44 +66,51 @@ const styles = {
 
 const ReviewForm = ({ movie }) => {
 
-  const context = useContext(MoviesContext);
+  const authContext = useContext(AuthContext);
+  const queryClient = useQueryClient();
 
-  const [rating, setRating] = useState(3);
-
+  const [rating, setRating] = useState(5);
+  const [content, setContent] = useState("");
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSnackClose = (event) => {
     setOpen(false);
-    navigate("/movies/favorites");
+    navigate(`/movies/${movie.id}`);
   };
 
+  const onSubmit = async () => {
+    if (!authContext.isAuthenticated) {
+      alert("You must be logged in to submit a review");
+      navigate("/login");
+      return;
+    }
 
+    if (!content.trim()) {
+      alert("Please write a review");
+      return;
+    }
 
-  const defaultValues = {
-    author: "",
-    review: "",
-    agree: false,
-    rating: "3",
-  };
-
-  const {
-    control,
-    formState: { errors },
-    handleSubmit,
-    reset,
-  } = useForm(defaultValues);
-
-  const handleRatingChange = (event) => {
-    setRating(event.target.value);
-  };
-
-  const onSubmit = (review) => {
-    review.movieId = movie.id;
-    review.rating = rating;
-    // console.log(review);
-    context.addReview(movie, review);
-    setOpen(true);
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const result = await createReview(movie.id, content, rating * 2, token);
+      
+      if (result.success) {
+        setContent("");
+        setRating(5);
+        // Invalidate the reviews cache to refetch
+        queryClient.invalidateQueries(['reviews', { movieId: movie.id }]);
+        setOpen(true);
+      } else {
+        alert(result.msg || "Error submitting review");
+      }
+    } catch (error) {
+      alert("Error submitting review: " + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
 
@@ -127,103 +137,51 @@ const ReviewForm = ({ movie }) => {
         </MuiAlert>
       </Snackbar>
 
-      <form sx={styles.form} onSubmit={handleSubmit(onSubmit)} noValidate>
-        <Controller
-          name="author"
-          control={control}
-          rules={{ required: "Name is required" }}
-          defaultValue=""
-          render={({ field: { onChange, value } }) => (
-            <TextField
-              sx={{ width: "40ch" }}
-              variant="outlined"
-              margin="normal"
-              required
-              onChange={onChange}
-              value={value}
-              id="author"
-              label="Author's name"
-              name="author"
-              autoFocus
-            />
-          )}
-        />
-        {errors.author && (
-          <Typography variant="h6" component="p">
-            {errors.author.message}
-          </Typography>
-        )}
-        <Controller
-          name="review"
-          control={control}
-          rules={{
-            required: "Review cannot be empty.",
-            minLength: { value: 10, message: "Review is too short" },
-          }}
-          defaultValue=""
-          render={({ field: { onChange, value } }) => (
-            <TextField
-              variant="outlined"
-              margin="normal"
-              required
-              fullWidth
-              name="review"
-              value={value}
-              onChange={onChange}
-              label="Review text"
-              id="review"
-              multiline
-              minRows={10}
-            />
-          )}
-        />
-        {errors.review && (
-          <Typography variant="h6" component="p">
-            {errors.review.message}
-          </Typography>
-        )}
-
-        <Controller
-          control={control}
+      <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} noValidate>
+        <Typography variant="h6" gutterBottom>
+          Rating:
+        </Typography>
+        <Rating
           name="rating"
-          render={({ field: { onChange, value } }) => (
-            <TextField
-              id="select-rating"
-              select
-              variant="outlined"
-              label="Rating Select"
-              value={rating}
-              onChange={handleRatingChange}
-              helperText="Don't forget your rating"
-            >
-              {ratings.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </TextField>
-          )}
+          value={rating}
+          onChange={(event, newValue) => setRating(newValue)}
+          size="large"
+          sx={{ mb: 2 }}
         />
 
-        <Box sx={styles.buttons}>
+        <TextField
+          variant="outlined"
+          margin="normal"
+          required
+          fullWidth
+          name="review"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          label="Write your review"
+          id="review"
+          multiline
+          minRows={8}
+          maxRows={15}
+          placeholder="Share your thoughts about this movie..."
+        />
+
+        <Box sx={{ mt: 3 }}>
           <Button
             type="submit"
             variant="contained"
             color="primary"
-            sx={styles.submit}
+            sx={{ mr: 2 }}
+            disabled={loading}
           >
-            Submit
+            {loading ? "Submitting..." : "Submit Review"}
           </Button>
           <Button
             type="reset"
             variant="contained"
             color="secondary"
-            sx={styles.submit}
             onClick={() => {
-              reset({
-                author: "",
-                content: "",
-              });
+              setContent("");
+              setRating(5);
             }}
           >
             Reset

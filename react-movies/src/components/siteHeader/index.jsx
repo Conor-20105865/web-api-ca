@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
@@ -13,6 +13,7 @@ import Box from "@mui/material/Box";
 import { useNavigate } from "react-router-dom";
 import { styled, useTheme, alpha } from '@mui/material/styles';
 import useMediaQuery from "@mui/material/useMediaQuery";
+import { AuthContext } from "../../contexts/authContext";
 
 const Offset = styled('div')(({ theme }) => theme.mixins.toolbar);
 
@@ -23,12 +24,19 @@ const SiteHeader = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const navigate = useNavigate();
+  const context = useContext(AuthContext);
 
   const menuOptions = [
     { label: "Home", path: "/" },
     { label: "Favorites", path: "/movies/favorites" },
     { label: "Top Rated", path: "/movies/top-rated" },
-    { label: "Playlists", path: "/movies/playlists" }
+    { label: "Upcoming", path: "/movies/upcoming" },
+    // Only show Playlists when logged in
+    ...(context.isAuthenticated ? [{ label: "Playlists", path: "/movies/playlists" }] : [])
+  ];
+
+  const authMenuOptions = [
+    { label: "My Reviews", path: "/reviews/my-reviews" }
   ];
 
   const handleMenuSelect = (pageURL) => {
@@ -132,6 +140,28 @@ const SiteHeader = () => {
                       {opt.label}
                     </MenuItem>
                   ))}
+                  {context.isAuthenticated && authMenuOptions.map((opt) => (
+                    <MenuItem
+                      key={opt.label}
+                      onClick={() => handleMenuSelect(opt.path)}
+                    >
+                      {opt.label}
+                    </MenuItem>
+                  ))}
+                  {context.isAuthenticated ? (
+                    <MenuItem onClick={() => { setAnchorEl(null); context.signout(); }}>
+                      Log Out
+                    </MenuItem>
+                  ) : (
+                    <>
+                      <MenuItem onClick={() => { setAnchorEl(null); navigate('/login'); }}>
+                        Log In
+                      </MenuItem>
+                      <MenuItem onClick={() => { setAnchorEl(null); navigate('/signup'); }}>
+                        Sign Up
+                      </MenuItem>
+                    </>
+                  )}
                 </Menu>
               </>
             ) : (
@@ -146,6 +176,30 @@ const SiteHeader = () => {
                     {opt.label}
                   </Button>
                 ))}
+                {context.isAuthenticated && authMenuOptions.map((opt) => (
+                  <Button
+                    key={opt.label}
+                    color="inherit"
+                    onClick={() => handleMenuSelect(opt.path)}
+                    sx={{ ml: 2 }}
+                  >
+                    {opt.label}
+                  </Button>
+                ))}
+                {context.isAuthenticated ? (
+                  <Button color="inherit" onClick={() => context.signout()}>
+                    Log Out
+                  </Button>
+                ) : (
+                  <>
+                    <Button color="inherit" onClick={() => navigate('/login')}>
+                      Log In
+                    </Button>
+                    <Button color="inherit" onClick={() => navigate('/signup')} sx={{ ml: 2 }}>
+                      Sign Up
+                    </Button>
+                  </>
+                )}
               </Box>
             )}
           </Box>

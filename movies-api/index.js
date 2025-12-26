@@ -3,6 +3,9 @@ import express from 'express';
 import cors from 'cors';
 import usersRouter from './api/users/index.js';
 import moviesRouter from './api/movies/index.js';
+import reviewsRouter from './api/reviews/index.js';
+import favouritesRouter from './api/favourites/index.js';
+import playlistsRouter from './api/playlists/index.js';
 import authenticate from './authenticate/index.js';
 import './db/index.js';
 
@@ -23,6 +26,9 @@ app.use(express.json());
 
 app.use('/api/users', usersRouter);
 app.use('/api/movies', moviesRouter);
+app.use('/api/reviews', reviewsRouter);
+app.use('/api/favourites', favouritesRouter);
+app.use('/api/playlists', playlistsRouter);
 
 
 //ai code because ping is not working

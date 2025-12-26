@@ -1,75 +1,169 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useContext } from "react";
+import { AuthContext } from "./authContext";
+import { getFavourites, addFavourite, removeFavourite, getPlaylists, createPlaylist as createPlaylistAPI, addMovieToPlaylist, removeMovieFromPlaylist, deletePlaylist as deletePlaylistAPI } from "../api/tmdb-api";
 
 export const MoviesContext = React.createContext(null);
 
 const MoviesContextProvider = (props) => {
+  const authContext = useContext(AuthContext);
   const [favorites, setFavorites] = useState([]);
   const [myReviews, setMyReviews] = useState({});
   const [playlists, setPlaylists] = useState({});
-  const [activePlaylist, setActivePlaylist] = useState("watchLater");  // Default playlist no worky :(
+  const [activePlaylist, setActivePlaylist] = useState("watchLater");
 
-  const addToFavorites = (movie) => {
-    let newFavorites = [];
-    if (!favorites.includes(movie.id)) {
-      newFavorites = [...favorites, movie.id];
+  // Load favorites from backend when user logs in
+  useEffect(() => {
+    if (authContext.isAuthenticated && authContext.token) {
+      loadFavoritesFromBackend();
+      loadPlaylistsFromBackend();
+    } else {
+      setFavorites([]);
+      setPlaylists({});
     }
-    else {
-      newFavorites = [...favorites];
+  }, [authContext.isAuthenticated, authContext.token]);
+
+  const loadFavoritesFromBackend = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const favs = await getFavourites(token);
+      if (Array.isArray(favs)) {
+        setFavorites(favs.map(fav => fav.movieId));
+      }
+    } catch (error) {
+      console.error("Error loading favorites:", error);
     }
-    setFavorites(newFavorites)
   };
 
-  const removeFromFavorites = (movie) => {
-    setFavorites(favorites.filter(
-      (mId) => mId !== movie.id
-    ))
+  const loadPlaylistsFromBackend = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const playlistsArray = await getPlaylists(token);
+      if (Array.isArray(playlistsArray)) {
+        const playlistsObj = {};
+        playlistsArray.forEach(playlist => {
+          playlistsObj[playlist.name] = playlist.movies;
+        });
+        setPlaylists(playlistsObj);
+      }
+    } catch (error) {
+      console.error("Error loading playlists:", error);
+    }
+  };
+
+  const addToFavorites = async (movie) => {
+    if (!authContext.isAuthenticated) {
+      alert("You must be logged in to add favorites");
+      return;
+    }
+
+    if (!favorites.includes(movie.id)) {
+      try {
+        const token = localStorage.getItem("token");
+        await addFavourite(movie.id, token);
+        setFavorites([...favorites, movie.id]);
+      } catch (error) {
+        console.error("Error adding favorite:", error);
+        alert("Failed to add favorite");
+      }
+    }
+  };
+
+  const removeFromFavorites = async (movie) => {
+    try {
+      const token = localStorage.getItem("token");
+      await removeFavourite(movie.id, token);
+      setFavorites(favorites.filter(mId => mId !== movie.id));
+    } catch (error) {
+      console.error("Error removing favorite:", error);
+      alert("Failed to remove favorite");
+    }
   };
 
   const addReview = (movie, review) => {
     setMyReviews({ ...myReviews, [movie.id]: review })
   };
 
-  // New playlist functions
-  const createPlaylist = (name) => {
+  // Playlist functions
+  const createPlaylist = async (name) => {
+    if (!authContext.isAuthenticated) {
+      return;
+    }
+
     if (!playlists[name]) {
-      setPlaylists({ ...playlists, [name]: [] });
+      try {
+        const token = localStorage.getItem("token");
+        const result = await createPlaylistAPI(name, token);
+        if (result.success || result.playlist) {
+          setPlaylists({ ...playlists, [name]: [] });
+        }
+      } catch (error) {
+        console.error("Error creating playlist:", error);
+      }
     }
   };
 
-  const deletePlaylist = (name) => {
-    const { [name]: removed, ...remainingPlaylists } = playlists;
-    setPlaylists(remainingPlaylists);
-    if (activePlaylist === name) {
-      setActivePlaylist("watchLater");
+  const deletePlaylist = async (name) => {
+    try {
+      const token = localStorage.getItem("token");
+      await deletePlaylistAPI(name, token);
+      const { [name]: _, ...remainingPlaylists } = playlists;
+      setPlaylists(remainingPlaylists);
+      if (activePlaylist === name) {
+        setActivePlaylist("watchLater");
+      }
+    } catch (error) {
+      console.error("Error deleting playlist:", error);
+      alert("Failed to delete playlist");
     }
   };
 
-  const addToPlaylist = (movie, playlistName = activePlaylist) => {
+  const addToPlaylist = async (movie, playlistName = activePlaylist) => {
+    if (!authContext.isAuthenticated) {
+      alert("You must be logged in to add to playlists");
+      return;
+    }
+
     if (!movie || movie.id === undefined || movie.id === null) return;
     const id = Number(movie.id);
     if (Number.isNaN(id)) return;
 
-    if (!playlists[playlistName]) {
-      createPlaylist(playlistName);
-    }
+    try {
+      const token = localStorage.getItem("token");
+      await addMovieToPlaylist(playlistName, id, token);
 
-    if (!playlists[playlistName].includes(id)) {
-      setPlaylists({
-        ...playlists,
-        [playlistName]: [...(playlists[playlistName] || []), id]
-      });
+      
+      if (!playlists[playlistName]) {
+        setPlaylists({ ...playlists, [playlistName]: [id] });
+      } else if (!playlists[playlistName].includes(id)) {
+        setPlaylists({
+          ...playlists,
+          [playlistName]: [...playlists[playlistName], id]
+        });
+      }
+    } catch (error) {
+      console.error("Error adding to playlist:", error);
+      alert("Failed to add to playlist");
     }
   };
 
-  const removeFromPlaylist = (movie, playlistName = activePlaylist) => {
+  const removeFromPlaylist = async (movie, playlistName = activePlaylist) => {
     if (!movie || movie.id === undefined || movie.id === null) return;
     const id = Number(movie.id);
     if (Number.isNaN(id)) return;
+    
     if (playlists[playlistName]) {
-      setPlaylists({
-        ...playlists,
-        [playlistName]: playlists[playlistName].filter(pid => pid !== id)
-      });
+      try {
+        const token = localStorage.getItem("token");
+        await removeMovieFromPlaylist(playlistName, id, token);
+        
+        setPlaylists({
+          ...playlists,
+          [playlistName]: playlists[playlistName].filter(pid => pid !== id)
+        });
+      } catch (error) {
+        console.error("Error removing from playlist:", error);
+        alert("Failed to remove from playlist");
+      }
     }
   };
 

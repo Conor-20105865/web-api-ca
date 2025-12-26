@@ -142,7 +142,7 @@ export const getMovie = (args) => {
 
   export const getUpcomingMovies = () => {
     return fetch(
-      `https://api.themoviedb.org/3/movie/upcoming?api_key=${import.meta.env.VITE_TMDB_KEY}&language=en-US&page=1`
+      `http://localhost:8080/api/movies/upcoming`
     ).then((response) => {
       if (!response.ok) {
         return response.json().then((error) => {
@@ -227,3 +227,160 @@ export const getMovie = (args) => {
       throw error
     });
   };
+
+export const login = async (username, password) => {
+  const response = await fetch('http://localhost:8080/api/users', {
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    method: 'post',
+    body: JSON.stringify({ username: username, password: password })
+  });
+  return response.json();
+};
+
+export const signup = async (username, password) => {
+  const response = await fetch('http://localhost:8080/api/users?action=register', {
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    method: 'post',
+    body: JSON.stringify({ username: username, password: password })
+  });
+  return response.json();
+};
+
+// Reviews API
+export const getReviewsByMovie = async (movieId) => {
+  const response = await fetch(`http://localhost:8080/api/reviews/movie/${movieId}`);
+  return response.json();
+};
+
+export const getReviewsByUser = async (username, token) => {
+  const response = await fetch(`http://localhost:8080/api/reviews/user/${username}`, {
+    headers: {
+      'Authorization': token
+    }
+  });
+  return response.json();
+};
+
+export const createReview = async (movieId, content, rating, token) => {
+  const response = await fetch('http://localhost:8080/api/reviews', {
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': token
+    },
+    method: 'post',
+    body: JSON.stringify({ movieId, content, rating })
+  });
+  return response.json();
+};
+
+export const updateReview = async (reviewId, content, rating, token) => {
+  const response = await fetch(`http://localhost:8080/api/reviews/${reviewId}`, {
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': token
+    },
+    method: 'put',
+    body: JSON.stringify({ content, rating })
+  });
+  return response.json();
+};
+
+export const deleteReview = async (reviewId, token) => {
+  const response = await fetch(`http://localhost:8080/api/reviews/${reviewId}`, {
+    headers: {
+      'Authorization': token
+    },
+    method: 'delete'
+  });
+  return response.json();
+};
+
+// Favs API
+export const getFavourites = async (token) => {
+  const response = await fetch('http://localhost:8080/api/favourites', {
+    headers: {
+      'Authorization': token
+    }
+  });
+  return response.json();
+};
+
+export const addFavourite = async (movieId, token) => {
+  const response = await fetch('http://localhost:8080/api/favourites', {
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': token
+    },
+    method: 'post',
+    body: JSON.stringify({ movieId })
+  });
+  return response.json();
+};
+
+export const removeFavourite = async (movieId, token) => {
+  const response = await fetch(`http://localhost:8080/api/favourites/${movieId}`, {
+    headers: {
+      'Authorization': token
+    },
+    method: 'delete'
+  });
+  return response.json();
+};
+
+// Playlists API
+export const getPlaylists = async (token) => {
+  const response = await fetch('http://localhost:8080/api/playlists', {
+    headers: {
+      'Authorization': token
+    }
+  });
+  return response.json();
+};
+
+export const createPlaylist = async (name, token) => {
+  const response = await fetch('http://localhost:8080/api/playlists', {
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': token
+    },
+    method: 'post',
+    body: JSON.stringify({ name })
+  });
+  return response.json();
+};
+
+export const addMovieToPlaylist = async (playlistName, movieId, token) => {
+  const response = await fetch(`http://localhost:8080/api/playlists/${playlistName}/movies`, {
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': token
+    },
+    method: 'post',
+    body: JSON.stringify({ movieId })
+  });
+  return response.json();
+};
+
+export const removeMovieFromPlaylist = async (playlistName, movieId, token) => {
+  const response = await fetch(`http://localhost:8080/api/playlists/${playlistName}/movies/${movieId}`, {
+    headers: {
+      'Authorization': token
+    },
+    method: 'delete'
+  });
+  return response.json();
+};
+
+export const deletePlaylist = async (name, token) => {
+  const response = await fetch(`http://localhost:8080/api/playlists/${name}`, {
+    headers: {
+      'Authorization': token
+    },
+    method: 'delete'
+  });
+  return response.json();
+};

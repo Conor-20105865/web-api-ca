@@ -16,6 +16,12 @@ import TopRatedMoviesPage from './pages/topRatedMoviesPage'
 import PlaylistsPage from './pages/playlistsPage';
 import ActorDetailsPage from './pages/actorDetailsPage';
 import SearchPage from './pages/searchPage';
+import LoginPage from "./pages/loginPage";
+import SignUpPage from "./pages/signUpPage";
+import MyReviewsPage from "./pages/myReviewsPage";
+import UpcomingMoviesPage from "./pages/upcomingMoviesPage";
+import AuthContextProvider from "./contexts/authContext";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 
 
@@ -42,21 +48,27 @@ const App = () => {
       })}>
         <CssBaseline />
       <BrowserRouter>
-        <SiteHeader />
-        <MoviesContextProvider>
-          <Routes>
-            <Route path="/movies/favorites" element={<FavoriteMoviesPage />} />
-            <Route path="/movies/top-rated" element={<TopRatedMoviesPage />} />
-            <Route path="/movies/playlists" element={<PlaylistsPage />} />
-            <Route path="/search" element={<SearchPage />} />
-            <Route path="/reviews/:id" element={<MovieReviewPage />} />
-            <Route path="/reviews/form" element={<AddMovieReviewPage />} />
-            <Route path="/movies/:id" element={<MoviePage />} />
-            <Route path="/actors/:id" element={<ActorDetailsPage />} />
-            <Route path="/" element={<HomePage />} />
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
-        </MoviesContextProvider>
+        <AuthContextProvider>
+          <SiteHeader />
+          <MoviesContextProvider>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignUpPage />} />
+              <Route path="/reviews/my-reviews" element={<ProtectedRoute><MyReviewsPage /></ProtectedRoute>} />
+              <Route path="/movies/favorites" element={<ProtectedRoute><FavoriteMoviesPage /></ProtectedRoute>} />
+              <Route path="/movies/top-rated" element={<TopRatedMoviesPage />} />
+              <Route path="/movies/upcoming" element={<UpcomingMoviesPage />} />
+              <Route path="/movies/playlists" element={<ProtectedRoute><PlaylistsPage /></ProtectedRoute>} />
+              <Route path="/search" element={<SearchPage />} />
+              <Route path="/reviews/:id" element={<MovieReviewPage />} />
+              <Route path="/reviews/form" element={<ProtectedRoute><AddMovieReviewPage /></ProtectedRoute>} />
+              <Route path="/movies/:id" element={<MoviePage />} />
+              <Route path="/actors/:id" element={<ActorDetailsPage />} />
+              <Route path="/" element={<HomePage />} />
+              <Route path="*" element={<Navigate to="/" />} />
+            </Routes>
+          </MoviesContextProvider>
+        </AuthContextProvider>
       </BrowserRouter>
       </ThemeProvider>
       <ReactQueryDevtools initialIsOpen={false} />
