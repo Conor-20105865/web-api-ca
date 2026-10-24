@@ -46,4 +46,3 @@ app.listen(port, () => {
   console.info(`Server running at ${port}`);
 });
 
-console.log('Mongo URI =', process.env.MONGO_URI);
